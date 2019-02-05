@@ -37,17 +37,17 @@ static createUser(email,password) {
     .then(console.log)
 }
 
-
-
+static checkUser(email) {
+    return db.one('select * from users where email=$1',[email])
+    .then(result => {console.log('user does not exist'); return false})
+    .catch(result => {console.log("user existed"); return true})
+}
 
 static retreiveUser(email) {
-
 return db.one('select * from users where email=$1',[email])
-// .then(data => {
-//     return new User (id, data.email);
-// })
-.then(console.log)
-}
+.then(data => {
+    return new User (data.id, email, data.phash, data.token, data.token_expiration, data.status, data.timestamp, data.active);
+})}
 // checks password match from bcrypt library
 passwordDoesMatch(thePassword) {
     const didMatch = bcrypt.compareSync(thePassword, this.phash);
