@@ -1,4 +1,4 @@
-function loginForm(){
+function loginForm(message=""){
 
     return `
     <form action="/login" method="POST">
@@ -9,6 +9,7 @@ function loginForm(){
         <br>
         <input type="submit">
     </form>
+    <div>${message}</div>
     `;
 }
 

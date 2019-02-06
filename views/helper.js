@@ -1,12 +1,7 @@
 function logoutButton(){
 
     return `
-    <div class="text-white">    
-        <a class="text-white" href ="/profile">My Profile</a>
-        |
-        <a class="text-white" href ="/browse">Browse Adventures</a>
-    </div>
-    <div class="text-white">
+    <div>
         <form action="/logout" method="POST">
             <input type="submit" value="logout">
         </form>

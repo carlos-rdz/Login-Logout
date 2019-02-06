@@ -34,25 +34,37 @@ static createUser(email,password) {
         .then(data => {
             return new User (data.id, email, phash, null, null, 'pending','2001-09-28 01:00',true );
     })
-    .then(console.log)
+    // .then(console.log)
 }
 
 static checkUser(email) {
     return db.one('select * from users where email=$1',[email])
-    .then(result => {console.log('user does not exist'); return false})
-    .catch(result => {console.log("user existed"); return true})
+    .then(result => {console.log('user existed'); return true})
+    .catch(result => {console.log('user does not exist'); return false})
 }
+
+
 
 static retreiveUser(email) {
 return db.one('select * from users where email=$1',[email])
 .then(data => {
     return new User (data.id, email, data.phash, data.token, data.token_expiration, data.status, data.timestamp, data.active);
-})}
+})
+.catch(data => {return new User (phash="didntpass")})
+}
 // checks password match from bcrypt library
 passwordDoesMatch(thePassword) {
     const didMatch = bcrypt.compareSync(thePassword, this.phash);
     return didMatch;
 }
+
+updateUserStatus(status){
+    return db.result(`update users set status=$1 where email=$2`, [status, this.email])
+    .then(console.log)
+}
+
+
+
 }
 
 

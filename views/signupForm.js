@@ -1,5 +1,5 @@
 
-function signupForm(){
+function signupForm(message=""){
 
     return `
     <div class"container">
@@ -12,12 +12,13 @@ function signupForm(){
     </div>
         <div class="row justify-content-start mb-4">
     <label class="col-3"> Password </label>    
-        <input class="col-3 mr-4" type="password" name="password" minlength="12" placeholder="minlength 12" required>
+        <input class="col-3 mr-4" type="password" name="password"  placeholder="Min Length 8" required>
         </div>
     <br>
         <input type="submit">
     
     </form>
+    <div>${message}</div>
     </div>
     `;
 }
