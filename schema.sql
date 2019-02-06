@@ -6,7 +6,7 @@ create table users
     token text,
     token_expiration timestamp,
     status text,
-    timestamp timestamp,
+    created timestamp,
     active boolean
 
 );
