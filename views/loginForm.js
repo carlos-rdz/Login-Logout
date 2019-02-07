@@ -10,6 +10,9 @@ function loginForm(message=""){
         <input type="submit">
     </form>
     <div>${message}</div>
+    <a href="./auth/linkedin">
+        <button>Log in with LinkedIn</button>
+    </a>
     `;
 }
 

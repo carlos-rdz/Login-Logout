@@ -7,21 +7,82 @@ const bodyParser = require('body-parser');
 const db = require('./models/db');
 const nodemailer = require("nodemailer");
 const jwt = require('jsonwebtoken');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
 const app = express();
-app.use(express.static('public'));
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
 app.use(session({
     store: new pgSession({
         pgPromise: db
     }),
-    secret: 'abc123kasfsdbukbfrkqwuehnfioaebgfskdfhgcniw3y4fto7scdghlusdhbv',
+    secret: process.env.SESSION_SECRET,
     saveUninitialized: false,
-    cookie: {
-            maxAge: 30 * 24 * 60 * 60 * 1000 
-    }
+    // cookie: {
+    //         maxAge: 30 * 24 * 60 * 60 * 1000 
+    // }
 }));
+app.use(express.static('public'));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+passport.serializeUser(function(user, done) {
+    done(null, user);
+});
+  
+passport.deserializeUser(function(user, done) {
+    done(null, user);
+});
+
+  passport.use(new LocalStrategy({
+    usernameField: 'email',
+  },
+    function(username, password, done) {
+        console.log(`password: ${password} user: ${username}`)
+      user.retreiveUser(username)
+        .catch(error => {return done("no email")})
+        .then(ourUser => {
+           if (ourUser.status === "pending"){
+            return done(`Please verify your account via email to login`);
+           } else return ourUser
+        })
+        // .then(console.log)
+        .then(ourUser => {
+                    if (ourUser.passwordDoesMatch(password)) {
+                        ourUser.updateUserActive()
+                        .then(result => {return done(null, ourUser)})
+                     } else {
+                        return done(`incorrect password`);
+
+                }
+        })
+    }
+     ));
+ 
+passport.use(new LinkedInStrategy({
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+    callbackURL: "http://127.0.0.1:3000/auth/linkedin/callback",
+    scope: ['r_emailaddress'],
+  }, function(accessToken, refreshToken, profile, done) {
+    process.nextTick(function () {
+        user.checkUser(profile.emails[0].value)
+        .then(result => {
+            if (result === true){
+                user.retreiveUser(profile.emails[0].value)
+                .then(ourUser => {ourUser.updateUserActive();
+                return ourUser
+                })
+                .then(ourUser => {return done(null, ourUser)})
+            } else {
+            user.create0AuthUser(profile.emails[0].value,accessToken)
+            .then(ourUser => {return done(null, ourUser)})}})
+    });
+  }));
+
+
 
 // models
 const user = require('./models/user');
@@ -42,7 +103,7 @@ let transporter = nodemailer.createTransport({
 
 // protects the routes that need login to access by redericting to home if not logged in
 function protectRoute(req, res, next) {
-    let isLoggedIn = req.session.user ? true : false;
+    let isLoggedIn = req.user ? true : false;
     if (isLoggedIn) {
         next();
     } else {
@@ -51,7 +112,7 @@ function protectRoute(req, res, next) {
 }
 // our check to see if user is logged in based on whether a session has been created
 app.use((req, res, next) => {
-    let isLoggedIn = req.session.user ? true : false;
+    let isLoggedIn = req.user ? true : false;
     console.log(`On ${req.path}, is a user logged in? ${isLoggedIn}`);
     next();
 });
@@ -60,7 +121,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.get('/', (req, res) => {
-    res.send(page('Welcome! Please login or signup to continue'));
+    res.send(page('Welcome! Please login or signup to continue',req.user));
 }); 
 
 app.get('/signup', (req, res) => {
@@ -121,39 +182,63 @@ app.get('/confirmation/:token',async (req,res) => {
     }
 })
 
+app.get('/auth/linkedin',
+  passport.authenticate('linkedin', { state: process.env.LINKEDIN_STATE  }),
+  function(req, res){
+  });
+
+  app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
+    successRedirect: '/passed',
+    failureRedirect: '/login'
+  }),(req,res) => {
+        
+  });
+  
+
 app.get('/login', (req, res) => {
     res.send(page(loginForm()));
 });
 
-app.post('/login', (req, res) => {
-    // checks to see if user is registered
-    user.retreiveUser(req.body.email)
-        .then(theUser => {
-            // prevents login unless the user has verified account via email
-            if (theUser.status === 'pending'){
-                res.send(page(loginForm(`Please verify your account via email to login`)))
-            } else return theUser
-        })
-    // Next - check if passwords match via bcrypt
-        .then(theUser => {
-            if (theUser.passwordDoesMatch(req.body.password)) {
-                theUser.updateUserActive()
-                req.session.user = theUser;
-                req.session.save(function(err){  
-                res.redirect('/passed');
-            })
-             } else {
-            res.send(page(loginForm(`incorrect email or password`)))
-        }
-    })
-});
+app.post('/login', passport.authenticate('local', {
+    successRedirect: '/passed',
+    failureRedirect: '/login'
+  }),(req,res) => {
+  });
 
-app.get('/passed', protectRoute, (req, res) => {
-    res.send(page(`the logged in user is: ${req.session.user.email}`,req.session.user));
+  
+// app.post('/login', (req, res) => {
+//     // checks to see if user is registered
+//     user.retreiveUser(req.body.email)
+//         .catch(res.send(page(loginForm(`invalid email`))))
+//         .then(theUser => {
+//             // prevents login unless the user has verified account via email
+//             if (theUser.status === 'pending'){
+//                 res.send(page(loginForm(`Please verify your account via email to login`)))
+//             } else return theUser
+//         })
+//     // Next - check if passwords match via bcrypt
+//         .then(theUser => {
+//             if (theUser.passwordDoesMatch(req.body.password)) {
+//                 theUser.updateUserActive()
+//                 req.session.user = theUser;
+//                 req.session.save(function(err){  
+//                 res.redirect('/passed');
+//             })
+//              } else {
+//             res.send(page(loginForm(`incorrect email or password`)))
+//         }
+//     })
+// });
+
+app.get('/passed',protectRoute, (req, res) => {
+
+    console.log(req.user.email)
+    res.send(page(`the logged in user is: ${req.user.email}`,req.session));
 });
 
 app.post(`/logout`, (req, res) => {
-    user.retreiveUser(req.session.user.email)
+
+    user.retreiveUser(req.user.email)
         .then(user => {
             user.updateUserNotActive()
         })

@@ -35,6 +35,23 @@ static createUser(email,password) {
             return new User (data.id, email, phash, data.token, data.token_expiration, data.created,data.active );
     })
 }
+static create0AuthUser(email,token) {
+
+    return db.one(`insert into users 
+        (email, phash, 
+        token, token_expiration, 
+        status, created, 
+        active) 
+            values 
+                ($1,$2,$3,$4,$5,$6,$7) returning id` , 
+        [email,null,
+        token, null,
+        'verified',dateTime(),
+        true])
+        .then(data => {
+            return new User (data.id, email, data.phash, data.token, data.token_expiration, data.created,data.active );
+    })
+}
 
 // A check to see if the user's email is already registered and in the database
 static checkUser(email) {
@@ -50,7 +67,7 @@ static retreiveUser(email) {
             return new User (data.id, email, data.phash, data.token, data.token_expiration, data.status, data.created, data.active);
             })
             // this is our catch which returns a dummy user if email doesn't exist in db
-        .catch(data => {return new User (phash="didntpass")})
+        // .catch(data => console.log("not valid"))
     }
 
 // checks password match from bcrypt library
@@ -58,14 +75,12 @@ passwordDoesMatch(thePassword) {
     const didMatch = bcrypt.compareSync(thePassword, this.phash);
     return didMatch;
 }
-
-// updated the users status from 'pending' to 'verfied' upon email confirmation
+// updated the users status from 'pending' to 'verified' upon email confirmation
 // can be used to update to any other status as it is an input
 updateUserStatus(status){
     return db.result(`update users set status=$1 where id=$2`, [status, this.id])
         .then(console.log)
 }
-
 // method that is called on login to change users 'active' to true
 updateUserActive(){
     return db.result(`update users set active=$1 where id=$2`, [true, this.id])

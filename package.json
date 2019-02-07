@@ -22,7 +22,11 @@
     "nodemailer": "^5.1.1",
     "passport": "^0.4.0",
     "passport-linkedin-oauth2": "^1.6.1",
+    "passport-local": "^1.0.0",
     "passport-oauth2": "^1.4.0",
     "pg-promise": "^8.5.5"
+  },
+  "devDependencies": {
+    "tape": "^4.9.2"
   }
 }

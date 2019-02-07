@@ -19,6 +19,9 @@ function signupForm(message=""){
     
     </form>
     <div>${message}</div>
+    <a href="./auth/linkedin">
+        <button>Sign in with LinkedIn</button>
+    </a>
     </div>
     `;
 }
