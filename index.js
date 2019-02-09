@@ -10,6 +10,8 @@ const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const flash = require('connect-flash');
 const app = express();
 app.use(session({
     store: new pgSession({
@@ -17,16 +19,13 @@ app.use(session({
     }),
     secret: process.env.SESSION_SECRET,
     saveUninitialized: false,
-    // cookie: {
-    //         maxAge: 30 * 24 * 60 * 60 * 1000 
-    // }
 }));
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(passport.initialize());
 app.use(passport.session());
-
+app.use(flash());
 
 passport.serializeUser(function(user, done) {
     done(null, user);
@@ -36,53 +35,75 @@ passport.deserializeUser(function(user, done) {
     done(null, user);
 });
 
-  passport.use(new LocalStrategy({
+// Local Authentication
+passport.use(new LocalStrategy({
     usernameField: 'email',
   },
     function(username, password, done) {
-        console.log(`password: ${password} user: ${username}`)
-      user.retreiveUser(username)
-        .catch(error => {return done("no email")})
-        .then(ourUser => {
-           if (ourUser.status === "pending"){
-            return done(`Please verify your account via email to login`);
-           } else return ourUser
-        })
-        // .then(console.log)
-        .then(ourUser => {
-                    if (ourUser.passwordDoesMatch(password)) {
-                        ourUser.updateUserActive()
+        user.retreiveUser(username)
+            .catch(error => {return done(null,false,{message:"no email"})})
+            .then(ourUser => {
+                if (ourUser.status === "pending"){
+                    return done(null,false,`Please verify your account via email to login`);
+                } else return ourUser
+            })
+            .then(ourUser => {
+                if (ourUser.passwordDoesMatch(password)) {
+                    ourUser.updateUserActive()
                         .then(result => {return done(null, ourUser)})
-                     } else {
-                        return done(`incorrect password`);
-
+                } else {
+                    return done(null,false,`incorrect password`);
                 }
-        })
+            })
     }
-     ));
- 
+));
+// Linkedin Authentication
 passport.use(new LinkedInStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     callbackURL: "http://127.0.0.1:3000/auth/linkedin/callback",
     scope: ['r_emailaddress'],
-  }, function(accessToken, refreshToken, profile, done) {
-    process.nextTick(function () {
-        user.checkUser(profile.emails[0].value)
-        .then(result => {
-            if (result === true){
-                user.retreiveUser(profile.emails[0].value)
-                .then(ourUser => {ourUser.updateUserActive();
-                return ourUser
-                })
-                .then(ourUser => {return done(null, ourUser)})
-            } else {
-            user.create0AuthUser(profile.emails[0].value,accessToken)
-            .then(ourUser => {return done(null, ourUser)})}})
-    });
+  }, 
+    function(accessToken, refreshToken, profile, done) {
+        process.nextTick(function () {
+            user.checkUser(profile.emails[0].value)
+                .then(result => {
+                    if (result === true){
+                        user.retreiveUser(profile.emails[0].value)
+                            .then(ourUser => {
+                                ourUser.updateUserActive();
+                                return ourUser
+                            })
+                                .then(ourUser => {return done(null, ourUser)})
+                    } else {
+                        user.create0AuthUser(profile.emails[0].value,accessToken)
+                            .then(ourUser => {return done(null, ourUser)})}})
+        });
   }));
 
-
+// GMAIL Authentication
+  passport.use(new GoogleStrategy({
+      clientID: process.env.GMAIL_CLIENT_ID,
+      clientSecret: process.env.GMAIL_CLIENT_SECRET,
+      callbackURL: "http://127.0.0.1:3000/auth/google/callback"
+    },
+    function(accessToken, refreshToken, profile, done) {
+        console.log(profile)
+        user.checkUser(profile.emails[0].value)
+                .then(result => {
+                    if (result === true){
+                        user.retreiveUser(profile.emails[0].value)
+                            .then(ourUser => {
+                                ourUser.updateUserActive();
+                                return ourUser
+                            })
+                                .then(ourUser => {return done(null, ourUser)})
+                    } else {
+                        user.create0AuthUser(profile.emails[0].value,accessToken)
+                            .then(ourUser => {return done(null, ourUser)})}})
+    //   });
+    }
+  ));  
 
 // models
 const user = require('./models/user');
@@ -111,13 +132,12 @@ function protectRoute(req, res, next) {
     }
 }
 // our check to see if user is logged in based on whether a session has been created
+// display login or logout
 app.use((req, res, next) => {
     let isLoggedIn = req.user ? true : false;
     console.log(`On ${req.path}, is a user logged in? ${isLoggedIn}`);
     next();
 });
-
-
 
 // Routes
 app.get('/', (req, res) => {
@@ -183,18 +203,26 @@ app.get('/confirmation/:token',async (req,res) => {
 })
 
 app.get('/auth/linkedin',
-  passport.authenticate('linkedin', { state: process.env.LINKEDIN_STATE  }),
-  function(req, res){
-  });
+    passport.authenticate('linkedin', { state: process.env.LINKEDIN_STATE  }),
+    function(req, res){
+});
 
-  app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
+app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
     successRedirect: '/passed',
     failureRedirect: '/login'
-  }),(req,res) => {
-        
+}),(req,res) => {
+});
+
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['email'] }));
+
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/');
   });
   
-
 app.get('/login', (req, res) => {
     res.send(page(loginForm()));
 });
@@ -205,56 +233,26 @@ app.post('/login', passport.authenticate('local', {
   }),(req,res) => {
   });
 
-  
-// app.post('/login', (req, res) => {
-//     // checks to see if user is registered
-//     user.retreiveUser(req.body.email)
-//         .catch(res.send(page(loginForm(`invalid email`))))
-//         .then(theUser => {
-//             // prevents login unless the user has verified account via email
-//             if (theUser.status === 'pending'){
-//                 res.send(page(loginForm(`Please verify your account via email to login`)))
-//             } else return theUser
-//         })
-//     // Next - check if passwords match via bcrypt
-//         .then(theUser => {
-//             if (theUser.passwordDoesMatch(req.body.password)) {
-//                 theUser.updateUserActive()
-//                 req.session.user = theUser;
-//                 req.session.save(function(err){  
-//                 res.redirect('/passed');
-//             })
-//              } else {
-//             res.send(page(loginForm(`incorrect email or password`)))
-//         }
-//     })
-// });
-
-app.get('/passed',protectRoute, (req, res) => {
-
-    console.log(req.user.email)
-    res.send(page(`the logged in user is: ${req.user.email}`,req.session));
+app.get('/passed', (req, res) => {
+    let user = req.user
+    res.send(page(`the logged in user is: ${user.email}`,req.session));
 });
 
 app.post(`/logout`, (req, res) => {
-
     user.retreiveUser(req.user.email)
         .then(user => {
             user.updateUserNotActive()
         })
         .then(req.session.destroy(()=>{
             res.redirect(`/`); 
-        }))
-    
-    // redirect them to homepage
+        }))    
 });
 
 app.listen(3000, () => {
     console.log('Express Ready')
 });
 
-// need to add a check for the email being wrong - done in model
-// need to add email verification - done
-// add timestamp for registration time 
-// 0auth
-// tape for testing
+
+
+// Oauth and regular login with same email?
+// token expiration

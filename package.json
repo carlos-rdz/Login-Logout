@@ -12,6 +12,7 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.18.3",
+    "connect-flash": "^0.1.1",
     "connect-pg-simple": "^5.0.0",
     "date-time": "^2.1.0",
     "dotenv": "^6.2.0",
@@ -21,6 +22,7 @@
     "jsonwebtoken": "^8.4.0",
     "nodemailer": "^5.1.1",
     "passport": "^0.4.0",
+    "passport-google-oauth20": "^1.0.0",
     "passport-linkedin-oauth2": "^1.6.1",
     "passport-local": "^1.0.0",
     "passport-oauth2": "^1.4.0",
