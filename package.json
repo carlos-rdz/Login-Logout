@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "cypress:open": "cypress open",
     "reset-db": "dropdb LingoQualifier; createdb LingoQualifier; psql -f schema.sql LingoQualifier; psql -f seed.sql LingoQualifier;  psql LingoQualifier < node_modules/connect-pg-simple/table.sql"
   },
   "author": "",
@@ -29,6 +30,7 @@
     "pg-promise": "^8.5.5"
   },
   "devDependencies": {
+    "cypress": "^3.1.5",
     "tape": "^4.9.2"
   }
 }
