@@ -2,39 +2,23 @@
 function signupForm(message=""){
 
     return `
-    <form>
+    <h5> Signup </h5>
+
+    <form action="/signup" method="POST">
+
   <div class="form-group">
     <label for="exampleInputEmail1">Email address</label>
-    <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Enter email">
+    <input type="email" name="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Enter email">
     <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
-  </div>
-  <div class="form-group">
-    <label for="exampleInputPassword1">Password</label>
-    <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
-  </div>
-  <div class="form-group form-check">
-    <input type="checkbox" class="form-check-input" id="exampleCheck1">
-    <label class="form-check-label" for="exampleCheck1">Check me out</label>
-  </div>
-  <button type="submit" class="btn btn-primary">Submit</button>
-</form>
-    <div class"container">
-    
-    <form action="/signup" method="POST">
-    
-    <div class="row justify-content-start mb-4">
-    <label class="col-3"> Email </label>
-        <input class="col-3 mr-4" type="text" name="email" required>
     </div>
-        <div class="row justify-content-start mb-4">
-    <label class="col-3"> Password </label>    
-        <input class="col-3 mr-4" type="password" name="password"  placeholder="Min Length 8" required>
-        </div>
-    <br>
-        <input type="submit">
-    
+    <div class="form-group">
+    <label for="exampleInputPassword1">Password</label>
+    <input type="password" name="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
+    <small id="emailHelp" class="form-text text-muted">Must be 8 characters long.</small>
+    </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
     </form>
-    <div>${message}</div>
+    <div class="formMessage text-secondary">${message}</div>
     <div class="btn white darken-4 col s10 m4">
      <a href="./auth/linkedin" style="text-transform:none">
          <div class="left">

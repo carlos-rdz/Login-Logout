@@ -26,9 +26,8 @@ function page(content,isLoggedIn=false){
       ${
         isLoggedIn ? logoutButton() : loginOrRegister()
       }
-      
       </div>
-      <div class="p-3 mb-2 bg-light text-dark">
+      <div class="p-3 mb-2">
       ${content}
       </div>
       

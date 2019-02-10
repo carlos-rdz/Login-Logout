@@ -1,15 +1,20 @@
 function loginForm(message=""){
 
     return `
+    <h5> Login </h5>
     <form action="/login" method="POST">
-    <label> Email </label>
-        <input type="text" name="email"  >
-    <label> Password </label>    
-        <input type="password" name="password" >
-        <br>
-        <input type="submit">
+  <div class="form-group">
+    <label for="exampleInputEmail1">Email address</label>
+    <input type="email" name="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Enter email">
+    <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
+  </div>
+  <div class="form-group">
+    <label for="exampleInputPassword1">Password</label>
+    <input type="password" name="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
+    </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
     </form>
-    <div>${message}</div>
+    <div class="formMessage text-secondary">${message}</div>
     <div class="btn white darken-4 col s10 m4">
      <a href="./auth/linkedin" style="text-transform:none">
          <div class="left">

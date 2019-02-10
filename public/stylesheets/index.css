@@ -1,5 +1,6 @@
 body, html {
     height: 100%;
+    /* margin: 100px 100px 100px 100px; */
   }
   .bg {
     /* The image used */
@@ -106,4 +107,13 @@ node input
       background: #F8F8F8;
       color: #fff;
       user-select: none
+  }
+
+
+  .formMessage {
+      height: 40px;
+      font-size: 75%;
+      font-weight: bold;
+      vertical-align: middle;
+      line-height: 40px; 
   }
