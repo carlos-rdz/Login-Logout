@@ -75,6 +75,14 @@ passwordDoesMatch(thePassword) {
     const didMatch = bcrypt.compareSync(thePassword, this.phash);
     return didMatch;
 }
+
+
+resetPassword(theNewPassword){
+    const salt = bcrypt.genSaltSync(saltRounds)
+    const phash = bcrypt.hashSync(theNewPassword,salt)
+    return db.result(`update users set phash=$1 where id=$2`, [phash, this.id])
+        .then(console.log)
+}
 // updated the users status from 'pending' to 'verified' upon email confirmation
 // can be used to update to any other status as it is an input
 updateUserStatus(status){

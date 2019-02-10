@@ -112,6 +112,8 @@ const user = require('./models/user');
 const page = require('./views/page');
 const signupForm = require('./views/signupForm');
 const loginForm = require('./views/loginForm');
+const resetForm = require('./views/resetForm');
+const newPassword = require('./views/newPassword');
 
 // our email service which uses a gmail account I created saved in .env
 let transporter = nodemailer.createTransport({
@@ -201,6 +203,16 @@ app.get('/confirmation/:token',async (req,res) => {
         console.log("error")
     }
 })
+app.get('/forgotpasswordconfirmation/:token',async (req,res) => {
+    try {
+       const decoded = jwt.verify(req.params.token,process.env.JWTKEY);
+       await user.retreiveUser(decoded.user) 
+            // .then(console.log)
+                .then(ourUser => res.send(page(newPassword(ourUser))))
+    } catch(e){
+        console.log("error")
+    }
+})
 
 app.get('/auth/linkedin',
     passport.authenticate('linkedin', { state: process.env.LINKEDIN_STATE  }),
@@ -212,6 +224,44 @@ app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
     failureRedirect: '/login'
 }),(req,res) => {
 });
+
+app.get('/forgotpassword', (req,res)=> {
+    res.send(page(resetForm()))
+});
+
+app.post('/forgotpassword', (req,res)=> {
+    user.retreiveUser(req.body.email)
+        .then(ourUser => {
+            return jwt.sign(
+                {
+                    user: ourUser.email
+                },
+                    process.env.JWTKEY,
+                {
+                    expiresIn: '1d'
+                },(err,emailToken) => {
+                    const url = `http://localhost:3000/forgotpasswordconfirmation/${emailToken}`;
+                    transporter.sendMail({
+                        to: req.body.email,
+                        subject: "Reset Password ✔",
+                        html: `Please click this link to reset password: <a href="${url}">${url}</a>`
+                    });
+                }
+            )})
+            .then(res.send(page("please check your email to reset password")))
+            // need to fix catch
+        // .catch(res.send(page(resetForm("This email is not registered"))))
+
+});
+app.post('/setnewpassword', (req,res)=> {
+    user.retreiveUser(req.body.email)
+        .then(ourUser => {
+            ourUser.resetPassword(req.body.password)
+        })
+        .then(res.send(page("New password sucessfully set")))
+});
+
+
 
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['email'] }));
