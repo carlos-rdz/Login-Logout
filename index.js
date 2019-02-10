@@ -234,8 +234,7 @@ app.post('/login', passport.authenticate('local', {
   });
 
 app.get('/passed', (req, res) => {
-    let user = req.user
-    res.send(page(`the logged in user is: ${user.email}`,req.session));
+    res.send(page(`you have succesfully logged in`,req.session));
 });
 
 app.post(`/logout`, (req, res) => {
@@ -256,3 +255,9 @@ app.listen(3000, () => {
 
 // Oauth and regular login with same email?
 // token expiration
+
+
+
+
+
+// Sure, Most Helpful: Actually hearing about your real-life experiences and how you got to where you are now and giving perspective/examples on the best way to get there (showing the diffrent areas of a business and what skills align the most with CEO/Entrpeneur).  Most Confusing: Not a whole lot.  The whole idea of entrepeneurship and the best way to do it can be a bit confusing however as it is not an exact science and theres millions of ways to get there.
