@@ -3,7 +3,7 @@ function logoutButton(){
     return `
     <div>
         <form action="/logout" method="POST">
-            <input type="submit" value="logout">
+            <button type="submit" class="btn btn-dark">Logout</button>
         </form>
     </div>
     `;
