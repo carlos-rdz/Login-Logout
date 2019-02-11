@@ -98,10 +98,8 @@ passport.use(new LinkedInStrategy({
                     } else {
                         user.create0AuthUser(profile.emails[0].value,accessToken)
                             .then(ourUser => {return done(null, ourUser)})}})
-    //   });
     }
   ));  
-
 // models
 const user = require('./models/user');
 
@@ -187,7 +185,6 @@ app.get('/forgotpasswordconfirmation/:token',async (req,res) => {
     try {
        const decoded = jwt.verify(req.params.token,process.env.JWTKEY);
        await user.retreiveUser(decoded.user) 
-            // .then(console.log)
                 .then(ourUser => res.send(page(newPassword(ourUser))))
     } catch(e){
         console.log("error")
@@ -195,7 +192,7 @@ app.get('/forgotpasswordconfirmation/:token',async (req,res) => {
 })
 
 app.get('/auth/linkedin',
-    passport.authenticate('linkedin', { state: process.env.LINKEDIN_STATE  }),
+    passport.authenticate('linkedin', { state: process.env.LINKEDIN_STATE }),
     function(req, res){
 });
 
@@ -204,6 +201,26 @@ app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
     failureRedirect: '/login'
 }),(req,res) => {
 });
+
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['email'] }));
+
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/');
+  });
+
+app.get('/login', (req, res) => {
+    res.send(page(loginForm()));
+});
+
+app.post('/login', passport.authenticate('local', {
+    successRedirect: '/passed',
+    failureRedirect: '/login'
+  }),(req,res) => {
+  });  
 
 app.get('/forgotpassword', (req,res)=> {
     res.send(page(resetForm()))
@@ -241,26 +258,6 @@ app.post('/setnewpassword', (req,res)=> {
         .then(res.send(page("New password sucessfully set")))
 });
 
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['email'] }));
-
-app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
-  function(req, res) {
-    // Successful authentication, redirect home.
-    res.redirect('/');
-  });
-  
-app.get('/login', (req, res) => {
-    res.send(page(loginForm()));
-});
-
-app.post('/login', passport.authenticate('local', {
-    successRedirect: '/passed',
-    failureRedirect: '/login'
-  }),(req,res) => {
-  });
-
 app.get('/passed', (req, res) => {
     res.send(page(`you have succesfully logged in`,req.session));
 });
@@ -278,10 +275,3 @@ app.post(`/logout`, (req, res) => {
 app.listen(3000, () => {
     console.log('Express Ready')
 });
-
-
-
-
-
-
-
