@@ -11,7 +11,6 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const flash = require('connect-flash');
 const app = express();
 app.use(session({
     store: new pgSession({
@@ -25,7 +24,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(flash());
 
 passport.serializeUser(function(user, done) {
     done(null, user);
@@ -80,7 +78,6 @@ passport.use(new LinkedInStrategy({
                             .then(ourUser => {return done(null, ourUser)})}})
         });
   }));
-
 // GMAIL Authentication
   passport.use(new GoogleStrategy({
       clientID: process.env.GMAIL_CLIENT_ID,
@@ -94,7 +91,7 @@ passport.use(new LinkedInStrategy({
                     if (result === true){
                         user.retreiveUser(profile.emails[0].value)
                             .then(ourUser => {
-                                ourUser.updateUserActive();
+                                ourUser.updateUserActiveOauth(accessToken);
                                 return ourUser
                             })
                                 .then(ourUser => {return done(null, ourUser)})
@@ -123,23 +120,6 @@ let transporter = nodemailer.createTransport({
       pass: process.env.EMAILPASS 
     }
   });
-
-// protects the routes that need login to access by redericting to home if not logged in
-function protectRoute(req, res, next) {
-    let isLoggedIn = req.user ? true : false;
-    if (isLoggedIn) {
-        next();
-    } else {
-        res.redirect(`/`);
-    }
-}
-// our check to see if user is logged in based on whether a session has been created
-// display login or logout
-app.use((req, res, next) => {
-    let isLoggedIn = req.user ? true : false;
-    console.log(`On ${req.path}, is a user logged in? ${isLoggedIn}`);
-    next();
-});
 
 // Routes
 app.get('/', (req, res) => {
@@ -261,8 +241,6 @@ app.post('/setnewpassword', (req,res)=> {
         .then(res.send(page("New password sucessfully set")))
 });
 
-
-
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['email'] }));
 
@@ -303,11 +281,7 @@ app.listen(3000, () => {
 
 
 
-// Oauth and regular login with same email?
-// token expiration
 
 
 
 
-
-// Sure, Most Helpful: Actually hearing about your real-life experiences and how you got to where you are now and giving perspective/examples on the best way to get there (showing the diffrent areas of a business and what skills align the most with CEO/Entrpeneur).  Most Confusing: Not a whole lot.  The whole idea of entrepeneurship and the best way to do it can be a bit confusing however as it is not an exact science and theres millions of ways to get there.

@@ -36,7 +36,6 @@ static createUser(email,password) {
     })
 }
 static create0AuthUser(email,token) {
-
     return db.one(`insert into users 
         (email, phash, 
         token, token_expiration, 
@@ -52,7 +51,6 @@ static create0AuthUser(email,token) {
             return new User (data.id, email, data.phash, data.token, data.token_expiration, data.created,data.active );
     })
 }
-
 // A check to see if the user's email is already registered and in the database
 static checkUser(email) {
     return db.one('select * from users where email=$1',[email])
@@ -76,7 +74,6 @@ passwordDoesMatch(thePassword) {
     return didMatch;
 }
 
-
 resetPassword(theNewPassword){
     const salt = bcrypt.genSaltSync(saltRounds)
     const phash = bcrypt.hashSync(theNewPassword,salt)
@@ -92,6 +89,10 @@ updateUserStatus(status){
 // method that is called on login to change users 'active' to true
 updateUserActive(){
     return db.result(`update users set active=$1 where id=$2`, [true, this.id])
+        .then(console.log)
+}
+updateUserActiveOauth(token){
+    return db.result(`update users set active=$1, token=$2 where id=$3`, [true,token, this.id])
         .then(console.log)
 }
 // method that is called on logout to change users 'active' to false
